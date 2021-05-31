@@ -7,57 +7,77 @@ using Websocket.Client;
 
 namespace Uech_Discord_Library
 {
-    class Client
+    public class Client
     {
-        public bool Debug { get; set; }
+        bool Debug { get; set; }
         string Token { get; set; }
-        WebsocketClient wsclient;
-        public async Task Login(string Token, bool debug = false)
+
+        // Listner for messages
+        //public event TickHandler tick;
+        //public delegate void TickHandler(Client m);
+
+        public async Task Login(string Token, Client getref, bool debug = false)
         {
-            var start = DateTime.Now;
-            Client getref = new();
             Identify identify0 = new();
             var url = new Uri("wss://gateway.discord.gg/?v=9&encoding=json");
             getref.Token = Token;
 
-            getref.wsclient = new WebsocketClient(url);
+            var wsclient = new WebsocketClient(url);
             {
                 // Reconnections
-                {
-                    getref.wsclient.ReconnectTimeout = TimeSpan.FromSeconds(30000);
-                    getref.wsclient.ReconnectionHappened.Subscribe(info => {
-                        Console.WriteLine(info.GetType());
-                        Console.WriteLine(DateTime.Now - start);
-                    });
-                }
+                wsclient.ReconnectionHappened.Subscribe(info => { Console.WriteLine(info.GetType()); });
 
                 // Get messages
-                getref.wsclient.MessageReceived.Subscribe(msg => {
+                wsclient.MessageReceived.Subscribe(msg =>
+                {
                     dynamic d = JsonConvert.DeserializeObject(msg.ToString());
-                    if (getref.Debug) Console.WriteLine("\r\n"+d.ToString());
-                    if (d.t == "MESSAGE_CREATE") Console.WriteLine($"Author: {d.d.author.username} Message: {d.d.content}");
+                    if (getref.Debug) Console.WriteLine("\r\n" + d.ToString());
                 });
 
                 // Start connection...
-                await getref.wsclient.Start();
+                await wsclient.Start();
 
                 // Identify payload
-                await Task.Run(() => getref.wsclient.Send(identify0.Verify(identify0, Token)));
+                await Task.Run(() =>
+                {
+                    wsclient.Send(identify0.Verify(identify0, Token));
+                });
 
                 // Handshake payload
                 await Task.Run(() =>
                 {
-                    while(true)
+                    while (true)
                     {
                         Thread.Sleep(30000);
                         Console.WriteLine("Sending hearthbeat!");
-                        getref.wsclient.Send(identify0.Heartbeat());
+                        wsclient.Send(identify0.Heartbeat());
                     }
                 });
 
                 Console.ReadLine();
             }
-            
+
         }
     }
 }
+/*
+    public class Listner
+    {
+        public void Subscribe(Client m)
+        {
+            m.tick += new Client.TickHandler(Message);
+        }
+
+        private void Message(Client m)
+        {
+            //string msg = "";
+            m.wsclient.MessageReceived.Subscribe(msg => {
+            dynamic d = JsonConvert.DeserializeObject(msg.ToString());
+                //if (d.t == "MESSAGE_CREATE")
+                Console.WriteLine("\r\r\nNew data recived...");
+            });
+            //return msg;
+        }
+    }
+}
+*/

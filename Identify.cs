@@ -19,19 +19,19 @@ namespace Uech_Discord_Library
             public string token { get; set; }
             public int intents = 513;
             public Properties properties = new();
+            public class Properties
+            {
+                [JsonProperty("$os")]
+                public string Os = "linux";
 
+                [JsonProperty("$browser")]
+                public string Browser = "utech";
+
+                [JsonProperty("$device")]
+                public string Device = "utech";
+            }
         }
-        public class Properties
-        {
-            [JsonProperty("$os")]
-            public string Os = "linux";
 
-            [JsonProperty("$browser")]
-            public string Browser = "utech";
-
-            [JsonProperty("$device")]
-            public string Device = "utech";
-        }
 
         public class Handshake
         {

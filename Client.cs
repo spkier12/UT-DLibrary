@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using System.Threading.Tasks;
@@ -9,6 +11,7 @@ namespace Uech_Discord_Library
 {
     public class Client
     {
+        Listeners listeners = new Listeners();
         bool Debug { get; set; }
         string Token { get; set; }
 
@@ -30,6 +33,7 @@ namespace Uech_Discord_Library
                 // Get messages
                 wsclient.MessageReceived.Subscribe(msg =>
                 {
+                    listeners.Value = msg;
                     dynamic d = JsonConvert.DeserializeObject(msg.ToString());
                     if (getref.Debug) Console.WriteLine("\r\n" + d.ToString());
                 });
@@ -59,25 +63,38 @@ namespace Uech_Discord_Library
 
         }
     }
-}
-/*
-    public class Listner
+    public class DiscordEventArgs : EventArgs
     {
-        public void Subscribe(Client m)
+        object _value;
+        public object Value
         {
-            m.tick += new Client.TickHandler(Message);
+            get { return _value; }
+            set
+            {
+                _value = value;
+            }
         }
+    }
+    public class Listeners
+    {
+        public event EventHandler<DiscordEventArgs> OnResponse;
+        private object _value;
 
-        private void Message(Client m)
+        protected virtual void SendResponse()
         {
-            //string msg = "";
-            m.wsclient.MessageReceived.Subscribe(msg => {
-            dynamic d = JsonConvert.DeserializeObject(msg.ToString());
-                //if (d.t == "MESSAGE_CREATE")
-                Console.WriteLine("\r\r\nNew data recived...");
-            });
-            //return msg;
+            DiscordEventArgs discodEventArgs = new DiscordEventArgs();
+            discodEventArgs.Value = _value;
+            OnResponse(this, discodEventArgs);
+        }
+        public object Value
+        {
+            get { return _value; }
+            set
+            {
+                _value = value;
+                SendResponse();
+            }
         }
     }
 }
-*/
+

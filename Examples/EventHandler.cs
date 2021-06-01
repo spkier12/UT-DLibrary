@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Uech_Discord_Library
 {
-    public class Test
+    public class EventHandler
     {
         public void Start()
         {

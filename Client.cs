@@ -13,24 +13,27 @@ namespace Uech_Discord_Library
     {
         bool Debug = false;
         string Token = string.Empty;
+        Uri GatewayURI = new("wss://gateway.discord.gg/?v=9&encoding=json");
+
         public Client(string token, bool debug = false)
         {
-            Identify identify0 = new Identify();
-            var url = new Uri("wss://gateway.discord.gg/?v=9&encoding=json");
+            Identify identify0 = new();
             Debug = debug;
             Token = token;
+            Listeners listeners = new();
 
-            WebsocketClient wsclient = new WebsocketClient(url);
+            WebsocketClient wsclient = new(GatewayURI);
             {
                 // Reconnections
-                wsclient.ReconnectionHappened.Subscribe(info => { if(debug) Console.WriteLine(info.GetType()); });
+                wsclient.ReconnectionHappened.Subscribe(info => { if(debug) Console.WriteLine(info.Type); });
 
                 // Get messages
                 wsclient.MessageReceived.Subscribe(msg =>
                 {
-                    listeners.Value = msg;
+                    //Console.WriteLine(msg.ToString());
                     dynamic d = JsonConvert.DeserializeObject(msg.ToString());
                     if (debug) Console.WriteLine("\r\n" + d.ToString());
+                    Task.Run(() => { listeners.Value = msg; });
                 });
 
                 // Start connection...
@@ -43,31 +46,19 @@ namespace Uech_Discord_Library
                 });
 
                 // Handshake payload
-                Task.Run(() => Handshake(identify0));
+                Task.Run(() => Handshake(identify0, wsclient));
 
                 Console.ReadLine();
             }
         }
-        Listeners listeners = new Listeners();
 
-        // Listner for messages
-        //public event TickHandler tick;
-        //public delegate void TickHandler(Client m);
-
-        private async Task Handshake(Identify identify)
+        private void Handshake(Identify identify, WebsocketClient wsclient)
         {
-            var url = new Uri("wss://gateway.discord.gg/?v=9&encoding=json");
-
-            WebsocketClient wsclient = new WebsocketClient(url);
+            while (true)
             {
-                await Task.Run(() => {
-                    while (true)
-                    {
-                        Thread.Sleep(30000);
-                        Console.WriteLine("Sending hearthbeat!");
-                        wsclient.Send(identify.Heartbeat());
-                    }
-                });
+                Thread.Sleep(30000);
+                Console.WriteLine("Sending hearthbeat!");
+                wsclient.Send(identify.Heartbeat());
             }
         }
     }
@@ -77,10 +68,7 @@ namespace Uech_Discord_Library
         public object Value
         {
             get { return _value; }
-            set
-            {
-                _value = value;
-            }
+            set { _value = value; }
         }
     }
     public class Listeners
@@ -90,7 +78,7 @@ namespace Uech_Discord_Library
 
         protected virtual void SendResponse()
         {
-            DiscordEventArgs discodEventArgs = new DiscordEventArgs();
+            DiscordEventArgs discodEventArgs = new();
             discodEventArgs.Value = _value;
             OnResponse(this, discodEventArgs);
         }

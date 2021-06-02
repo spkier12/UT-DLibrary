@@ -8,40 +8,36 @@ using System.Net.Http;
 
 namespace Uech_Discord_Library.DiscordAPI
 {
-    class Messages
+    public class Messages
     {
         // Need to send header data unsure how in a GET request..
-        public async Task<HttpResponseMessage> GetChannelID(string ID, string Token)
+        public string GetChannelID(string ID, string Token)
         {
-            var content = new
-            {
-                method = "GET",
-                header = new
-                {
-                    authorization = $"Bot {Token}"
-                },
-            };
             HttpClient client = new();
-            return await client.GetAsync($"https://discord.com/api/v9/channels/{ID}");
+            client.DefaultRequestHeaders.Add("authorization", $"Bot {Token}");
+            var data = client.GetAsync($"https://discord.com/api/v9/channels/{ID}").Result;
+            return data.Content.ReadAsStringAsync().Result;
         }
 
         // No functions below here is usable without getting channel id first
-        public async Task<HttpResponseMessage> SendMessage(string ID, string Token, string Message = "Test")
+        public string SendMessage(string ID, string Token, string Message = "Test")
         {
-            var content = new {
-                method = "POST",
-                header = new
+            var body = new {
+                content = "Hello, World!",
+                tts = false,
+                embed = new
                 {
-                    authorization = $"Bot {Token}"
-                },
-
-                body = new
-                {
-                    content = Message
+                    title = "Hello, Embed!",
+                    description = "This is an embedded message."
                 }
-        };
+            };
             HttpClient client = new();
-            return await client.PostAsync($"https://discord.com/api/v9/channels/${ID}/messages", new StringContent(JsonConvert.SerializeObject(content)));
+
+            client.DefaultRequestHeaders.Add("authorization", $"Bot {Token}");
+            var body1 = JsonConvert.SerializeObject(body);
+            StringContent content1 = new StringContent(body1, Encoding.UTF8, "application/json");
+            var data = client.PostAsync($"https://discord.com/api/v9/channels/${ID}/messages", content1).Result;
+            return data.Content.ReadAsStringAsync().Result;
         }
     }
 }

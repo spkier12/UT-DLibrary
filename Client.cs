@@ -14,13 +14,15 @@ namespace Uech_Discord_Library
         bool Debug = false;
         string Token = string.Empty;
         Uri GatewayURI = new("wss://gateway.discord.gg/?v=9&encoding=json");
+        public event EventHandler<Data> tick;
+        public static Data data = new Data();
+
 
         public Client(string token, bool debug = false)
         {
             Identify identify0 = new();
             Debug = debug;
             Token = token;
-            Listeners listeners = new();
 
             WebsocketClient wsclient = new(GatewayURI);
             {
@@ -33,7 +35,8 @@ namespace Uech_Discord_Library
                     //Console.WriteLine(msg.ToString());
                     dynamic d = JsonConvert.DeserializeObject(msg.ToString());
                     if (debug) Console.WriteLine("\r\n" + d.ToString());
-                    Task.Run(() => { listeners.Value = msg; });
+                    data.OnMessageCreated = d;
+                    tick.Invoke(this, data);
                 });
 
                 // Start connection...
@@ -52,7 +55,7 @@ namespace Uech_Discord_Library
             }
         }
 
-        private void Handshake(Identify identify, WebsocketClient wsclient)
+        void Handshake(Identify identify, WebsocketClient wsclient)
         {
             while (true)
             {
@@ -62,35 +65,12 @@ namespace Uech_Discord_Library
             }
         }
     }
-    public class DiscordEventArgs : EventArgs
-    {
-        object _value;
-        public object Value
-        {
-            get { return _value; }
-            set { _value = value; }
-        }
-    }
-    public class Listeners
-    {
-        public event EventHandler<DiscordEventArgs> OnResponse;
-        private object _value;
 
-        protected virtual void SendResponse()
-        {
-            DiscordEventArgs discodEventArgs = new();
-            discodEventArgs.Value = _value;
-            OnResponse(this, discodEventArgs);
-        }
-        public object Value
-        {
-            get { return _value; }
-            set
-            {
-                _value = value;
-                SendResponse();
-            }
-        }
+    public class Data
+    {
+        public string OnMessageCreated { get; set; }
+        public string OnMessageDeleted { get; set; }
+        public string OnMessageUpdated { get; set; }
     }
 }
 

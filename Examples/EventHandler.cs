@@ -10,12 +10,13 @@ namespace Uech_Discord_Library
     {
         public void Start()
         {
-            Listeners listeners = new Listeners();
-            listeners.OnResponse += new EventHandler<DiscordEventArgs>(onResponse);
+            var client = new Client("Token");
+            client.tick += OnMessageCreated;
         }
-        private void onResponse(object sender, DiscordEventArgs e)
-        {
 
+        public static void OnMessageCreated(Object sender, Data Message)
+        {
+            Console.WriteLine("We recived a message: {Message}");
         }
     }
 }
